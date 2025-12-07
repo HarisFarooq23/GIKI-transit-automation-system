@@ -1,6 +1,6 @@
 # GIKI-transit-automation-system
 
-This project simulates the entire shuttle request and routing system used inside GIKI, using only pure C++, NO STL, NO file handling, and classic data structures such as:
+This project simulates the entire shuttle request and routing system used inside GIKI, using only pure C++, NO STL and classic data structures such as:
 
 AVL Tree
 
