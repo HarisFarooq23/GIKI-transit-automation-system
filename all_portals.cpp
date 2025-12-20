@@ -427,8 +427,8 @@ int processedRequestCount = 0; // Counter for route planning trigger
 // ==========================================
 
 void loadCampusData() {
-    // Initialize 19 shuttle stops
-    campusGraph = new StopsGraph(19);
+    // Initialize 9 shuttle stops
+    campusGraph = new StopsGraph(9);
 
     // Load stop names from data.txt
     campusGraph->setStopName(1, "auditorium");
@@ -848,12 +848,12 @@ void processRideRequests() {
 
         // Find nearest shuttle
         Shuttle* shuttle = findNearestShuttle(current->pickupStop);
-        if (shuttle == NULL) {
-            cout << "No available shuttles for Request ID " << current->requestID << "\n";
-            requestFront = requestFront->next;
-            processedCount++;
-            continue;
-        }
+        // if (shuttle == NULL) {
+        //     cout << "No available shuttles for Request ID " << current->requestID << "\n";
+        //     requestFront = requestFront->next;
+        //     processedCount++;
+        //     continue;
+        // }
 
         int shuttleToPickup = campusGraph->getShortestDistance(shuttle->currentStop, current->pickupStop);
         int pickupToDrop = campusGraph->getShortestDistance(current->pickupStop, current->dropStop);
@@ -1018,7 +1018,7 @@ void viewCurrentBooking() {
 }
 
 void viewPendingRequests() {
-    cout << "\n=== PROCESSED RIDE REQUESTS ===\n";
+    cout << "\n=== PENDING RIDE REQUESTS ===\n";
     if (requestFront == NULL) {
         cout << "No processed requests.\n";
         return;
