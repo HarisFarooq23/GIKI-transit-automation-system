@@ -17,7 +17,7 @@ struct Student{
     string name;
     Student* left;
     Student* right;
-    Student(int id,string n, string type){
+    Student(int id,string n){
         studentID=id;
         name=n;
         height=1;
@@ -427,8 +427,8 @@ int processedRequestCount = 0; // Counter for route planning trigger
 // ==========================================
 
 void loadCampusData() {
-    // Initialize 19 shuttle stops
-    campusGraph = new StopsGraph(19);
+    // Initialize 9 shuttle stops
+    campusGraph = new StopsGraph(9);
 
     // Load stop names from data.txt
     campusGraph->setStopName(1, "auditorium");
