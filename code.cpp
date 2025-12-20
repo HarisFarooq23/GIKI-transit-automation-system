@@ -3,6 +3,8 @@
 #include <fstream>
 #include <string>
 using namespace std;
+const string PROCESSED_FILE = "processed_rides.txt";
+const string CANCELLED_FILE = "cancelled_rides.txt";
 
 // ==========================================
 // GIKI SHUTTLE TRANSIT AUTOMATION SYSTEM
@@ -821,6 +823,38 @@ void createOptimizedRoute() {
     cout << "\n\n";
 }
 
+void loadProcessedRides() {
+    ifstream pf(PROCESSED_FILE);
+    if (!pf.is_open()) return;
+
+    int reqID, sid, shid, pickup, drop, dist, estTime;
+    string status;
+
+    while (pf >> reqID >> sid >> shid >> pickup >> drop >> dist >> estTime >> status) {
+        ProcessedRide* pr = new ProcessedRide(sid, shid, pickup, drop, reqID, dist, ""); // empty time if not needed
+        pr->estimatedTime = estTime;
+        pr->status = status;
+        pr->next = processedRear;
+        processedRear = pr;
+        if (processedFront == NULL) processedFront = processedRear;
+    }
+    pf.close();
+}
+
+void loadCancelledRides() {
+    ifstream cf(CANCELLED_FILE);
+    if (!cf.is_open()) return;
+
+    int reqID, sid, pickup, drop;
+    string time, pri;
+
+    while (cf >> reqID >> sid >> pickup >> drop >> time >> pri) {
+        CancelledRequest* cr = new CancelledRequest(sid, pickup, drop, time, pri, reqID);
+        cr->next = cancelledTop;
+        cancelledTop = cr;
+    }
+    cf.close();
+}
 
 
 void processRideRequests() {
@@ -831,80 +865,71 @@ void processRideRequests() {
         return;
     }
 
-    RideRequest* current = requestFront;
-    int processed = 0;
+    int processedCount = 0;
 
-    while (current != NULL) {
-        cout << "\nProcessing Request ID: " << current->requestID << "\n";
-        cout << "Student ID: " << current->studentID << "\n";
-        cout << "From: " << campusGraph->getStopName(current->pickupStop) << "\n";
-        cout << "To: " << campusGraph->getStopName(current->dropStop) << "\n";
+    while (requestFront != NULL && processedCount < 3) {
+        RideRequest* current = requestFront;
 
-        // Find nearest available shuttle using Dijkstra's algorithm
+        // Find nearest shuttle
         ShuttleNode* shuttle = findNearestShuttle(current->pickupStop);
-
         if (shuttle == NULL) {
-            cout << "No available shuttles found!\n";
-            current = current->next;
+            cout << "No available shuttles for Request ID " << current->requestID << "\n";
+            requestFront = requestFront->next;
+            processedCount++;
             continue;
         }
 
-        // Calculate shuttle-to-pickup and pickup-to-drop distances
         int shuttleToPickup = campusGraph->getShortestDistance(shuttle->currentStop, current->pickupStop);
         int pickupToDrop = campusGraph->getShortestDistance(current->pickupStop, current->dropStop);
         int totalDistance = shuttleToPickup + pickupToDrop;
-
-        cout << "Assigned Shuttle: " << shuttle->shuttleID << "\n";
-        cout << "Shuttle Distance to Pickup: " << shuttleToPickup << " units\n";
-        cout << "Ride Distance: " << pickupToDrop << " units\n";
-        cout << "Total Route Cost: " << totalDistance << " units\n";
-        cout << "Estimated Time: " << (totalDistance * 5) << " minutes\n";
 
         // Update shuttle
         shuttle->status = "Busy";
         shuttle->seatsFilled++;
 
-        // Add to processed rides queue
+        // Create processed ride (stack push)
         ProcessedRide* newProcessedRide = new ProcessedRide(
             current->studentID, shuttle->shuttleID, current->pickupStop,
-            current->dropStop, current->requestID, totalDistance, "Now"
+            current->dropStop, current->requestID, totalDistance, "Completed"
         );
 
-        if (processedFront == NULL) {
-            processedFront = processedRear = newProcessedRide;
-        } else {
-            processedRear->next = newProcessedRide;
-            processedRear = newProcessedRide;
+        newProcessedRide->next = processedRear; // push to stack
+        processedRear = newProcessedRide;
+        if (processedFront == NULL) processedFront = processedRear;
+
+        // Append to file
+        ofstream pf(PROCESSED_FILE, ios::app);
+        if (pf.is_open()) {
+            pf << newProcessedRide->requestID << " "
+               << newProcessedRide->studentID << " "
+               << newProcessedRide->shuttleID << " "
+               << newProcessedRide->pickupStop << " "
+               << newProcessedRide->dropStop << " "
+               << newProcessedRide->totalDistance << " "
+               << newProcessedRide->estimatedTime << " "
+               << newProcessedRide->status << "\n";
+            pf.close();
         }
 
-        // Move shuttle to drop location for simplicity
+        // Move shuttle to drop
         shuttle->currentStop = current->dropStop;
 
-        // Remove request from queue
-        RideRequest* temp = current;
-        if (requestFront == requestRear) {
-            requestFront = requestRear = NULL;
-        } else {
-            requestFront = requestFront->next;
-        }
+        // Remove ride request from queue
+        requestFront = current->next;
+        delete current;
 
-        cout << "Assignment completed successfully!\n";
-        processedRequestCount++; // Increment counter for route planning
-        delete temp;
-        current = requestFront;
-        processed++;
-
-        if (processed >= 3) break; // Process max 3 requests at once
+        processedCount++;
+        processedRequestCount++;
     }
 
-    cout << "\nProcessed " << processed << " ride request(s).\n";
+    cout << "\nProcessed " << processedCount << " ride(s).\n";
 
-    // Check if we should create an optimized route (after 5+ processed requests)
     if (processedRequestCount >= 5) {
         createOptimizedRoute();
-        processedRequestCount = 0; // Reset counter
+        processedRequestCount = 0;
     }
 }
+
 
 // ==========================================
 // ROUTE OPTIMIZATION FUNCTIONS
@@ -914,7 +939,7 @@ void processRideRequests() {
 void cancelRide() {
     int requestID;
     cout << "\n=== CANCEL RIDE REQUEST ===\n";
-    cout << "Enter Request ID to cancel: ";
+    cout << "Enter Request ID: ";
     cin >> requestID;
 
     RideRequest* current = requestFront;
@@ -922,25 +947,33 @@ void cancelRide() {
 
     while (current != NULL) {
         if (current->requestID == requestID) {
-            // Move to cancelled stack
             CancelledRequest* cancelled = new CancelledRequest(
                 current->studentID, current->pickupStop, current->dropStop,
-                current->timeRequested, current->priority, current->requestID
+                current->timeRequested, "User Cancelled", current->requestID
             );
+
+            // Push to stack
             cancelled->next = cancelledTop;
             cancelledTop = cancelled;
 
-            // Remove from queue
-            if (prev == NULL) {
-                requestFront = current->next;
-                if (requestFront == NULL) requestRear = NULL;
-            } else {
-                prev->next = current->next;
-                if (current == requestRear) requestRear = prev;
+            // Save to file
+            ofstream cf(CANCELLED_FILE, ios::app);
+            if (cf.is_open()) {
+                cf << cancelled->requestID << " "
+                   << cancelled->studentID << " "
+                   << cancelled->pickupStop << " "
+                   << cancelled->dropStop << " "
+                   << cancelled->timeRequested << " "
+                   << cancelled->priority << "\n";
+                cf.close();
             }
 
-            cout << "Ride request cancelled successfully!\n";
+            // Remove from request queue
+            if (prev == NULL) requestFront = current->next;
+            else prev->next = current->next;
             delete current;
+
+            cout << "Ride cancelled successfully.\n";
             return;
         }
         prev = current;
@@ -949,6 +982,7 @@ void cancelRide() {
 
     cout << "Request ID not found!\n";
 }
+
 
 void viewCurrentBooking() {
     int studentID;
@@ -1150,6 +1184,38 @@ void testDijkstra() {
     }
 
     delete[] distances;
+}
+void viewHistory() {
+    cout << "\n=== VIEW HISTORY ===\n";
+
+    // Processed rides (stack)
+    cout << "\n--- PROCESSED RIDES ---\n";
+    ProcessedRide* pr = processedRear;
+    if (!pr) cout << "No processed rides.\n";
+    while (pr != NULL) {
+        cout << "RequestID: " << pr->requestID
+             << " | StudentID: " << pr->studentID
+             << " | ShuttleID: " << pr->shuttleID
+             << " | From: " << campusGraph->getStopName(pr->pickupStop)
+             << " | To: " << campusGraph->getStopName(pr->dropStop)
+             << " | Distance: " << pr->totalDistance
+             << " | Status: " << pr->status << "\n";
+        pr = pr->next;
+    }
+
+    // Cancelled rides (stack)
+    cout << "\n--- CANCELLED RIDES ---\n";
+    CancelledRequest* cr = cancelledTop;
+    if (!cr) cout << "No cancelled rides.\n";
+    while (cr != NULL) {
+        cout << "RequestID: " << cr->requestID
+             << " | StudentID: " << cr->studentID
+             << " | From: " << campusGraph->getStopName(cr->pickupStop)
+             << " | To: " << campusGraph->getStopName(cr->dropStop)
+             << " | Time: " << cr->timeRequested
+             << " | Reason: " << cr->priority << "\n";
+        cr = cr->next;
+    }
 }
 
 // ==========================================
@@ -1353,6 +1419,7 @@ void adminMenu() {
         cout << "9. View Processed Rides\n";
         cout << "10. View Route Map\n";
         cout << "11. Test Dijkstra's Algorithm\n";
+        cout << "12. View History\n";
         cout << "0. Back to Main Menu\n";
         cout << "Enter choice: ";
         cin >> choice;
@@ -1369,6 +1436,7 @@ void adminMenu() {
             case 9: viewProcessedRides(); break;
             case 10: campusGraph->displayGraph(); break;
             case 11: testDijkstra(); break;
+            case 12: viewHistory(); break;
             case 0: break;
             default: cout << "Invalid choice!\n";
         }
@@ -1377,12 +1445,14 @@ void adminMenu() {
 
 int main() {
     cout << "=========================================\n";
-    cout << "?? GIKI SHUTTLE TRANSIT AUTOMATION SYSTEM\n";
+    cout << "  GIKI SHUTTLE TRANSIT AUTOMATION SYSTEM\n";
     cout << "=========================================\n";
 
     // Initialize system
     loadCampusData();
     initializeShuttles(3); // Load 3 shuttles as per data.txt
+     loadProcessedRides();
+    loadCancelledRides();
 
     cout << "System initialized successfully!\n";
     cout << "Loaded " << campusGraph->getNumStops() << " shuttle stops.\n";
