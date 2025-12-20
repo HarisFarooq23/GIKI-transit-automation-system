@@ -1,0 +1,147 @@
+
+// ---------- SHUTTLE GRAPH WITH DIJKSTRA ----------
+class ShuttleGraph {
+private:
+    int** adjacencyMatrix;
+    int numStops;
+    string* stopNames;
+    int* stopIDs;
+
+public:
+    ShuttleGraph(int stops) {
+        numStops = stops;
+        adjacencyMatrix = new int*[numStops];
+        stopNames = new string[numStops];
+        stopIDs = new int[numStops];
+
+        for (int i = 0; i < numStops; i++) {
+            adjacencyMatrix[i] = new int[numStops];
+            stopIDs[i] = i + 1;
+            for (int j = 0; j < numStops; j++) {
+                adjacencyMatrix[i][j] = 0; // No direct connection
+            }
+        }
+    }
+
+    ~ShuttleGraph() {
+        for (int i = 0; i < numStops; i++) {
+            delete[] adjacencyMatrix[i];
+        }
+        delete[] adjacencyMatrix;
+        delete[] stopNames;
+        delete[] stopIDs;
+    }
+
+    void setStopName(int id, string name) {
+        if (id >= 1 && id <= numStops) {
+            stopNames[id - 1] = name;
+        }
+    }
+
+    string getStopName(int id) {
+        if (id >= 1 && id <= numStops) {
+            return stopNames[id - 1];
+        }
+        return "Unknown";
+    }
+
+    void addEdge(int u, int v, int weight) {
+        if (u >= 1 && u <= numStops && v >= 1 && v <= numStops) {
+            adjacencyMatrix[u-1][v-1] = weight;
+            adjacencyMatrix[v-1][u-1] = weight; // Undirected graph
+        }
+    }
+
+    void removeEdge(int u, int v) {
+        if (u >= 1 && u <= numStops && v >= 1 && v <= numStops) {
+            adjacencyMatrix[u-1][v-1] = 0;
+            adjacencyMatrix[v-1][u-1] = 0;
+        }
+    }
+
+    // Dijkstra's Algorithm Implementation
+    int* findShortestPaths(int source) {
+        int* distances = new int[numStops];
+        bool* visited = new bool[numStops];
+        int* previous = new int[numStops];
+
+        // Initialize
+        for (int i = 0; i < numStops; i++) {
+            distances[i] = INT_MAX;
+            visited[i] = false;
+            previous[i] = -1;
+        }
+        distances[source - 1] = 0;
+
+        // Dijkstra's algorithm
+        for (int count = 0; count < numStops - 1; count++) {
+            // Find minimum distance vertex
+            int minDist = INT_MAX;
+            int minIndex = -1;
+
+            for (int v = 0; v < numStops; v++) {
+                if (!visited[v] && distances[v] < minDist) {
+                    minDist = distances[v];
+                    minIndex = v;
+                }
+            }
+
+            if (minIndex == -1) break; // No more reachable vertices
+            visited[minIndex] = true;
+
+            // Update distances of adjacent vertices
+            for (int v = 0; v < numStops; v++) {
+                if (!visited[v] && adjacencyMatrix[minIndex][v] != 0 &&
+                    distances[minIndex] != INT_MAX &&
+                    distances[minIndex] + adjacencyMatrix[minIndex][v] < distances[v]) {
+                    distances[v] = distances[minIndex] + adjacencyMatrix[minIndex][v];
+                    previous[v] = minIndex;
+                }
+            }
+        }
+
+        delete[] visited;
+        delete[] previous;
+        return distances;
+    }
+
+    int getShortestDistance(int source, int destination) {
+        if (source < 1 || source > numStops || destination < 1 || destination > numStops) {
+            return -1; // Invalid stops
+        }
+
+        int* distances = findShortestPaths(source);
+        int result = distances[destination - 1];
+        delete[] distances;
+        return result;
+    }
+
+    void displayGraph() {
+        cout << "\n=== SHUTTLE STOPS GRAPH ===\n";
+        cout << "Stop ID | Stop Name\n";
+        cout << "--------|----------\n";
+        for (int i = 0; i < numStops; i++) {
+            cout << "   " << (i+1) << "   | " << stopNames[i] << "\n";
+        }
+
+        cout << "\nAdjacency Matrix (Weights):\n";
+        cout << "   ";
+        for (int i = 0; i < numStops; i++) {
+            cout << " " << (i+1) << " ";
+        }
+        cout << "\n";
+        for (int i = 0; i < numStops; i++) {
+            cout << " " << (i+1) << " ";
+            for (int j = 0; j < numStops; j++) {
+                if (adjacencyMatrix[i][j] == 0) {
+                    cout << " . ";
+                } else {
+                    cout << " " << adjacencyMatrix[i][j] << " ";
+                }
+            }
+            cout << "\n";
+        }
+    }
+
+    int getNumStops() { return numStops; }
+};
