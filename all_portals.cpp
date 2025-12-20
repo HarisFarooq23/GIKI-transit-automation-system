@@ -900,7 +900,7 @@ void processRideRequests() {
 
     cout << "\nProcessed " << processedCount << " ride(s).\n";
 
-    if (processedRequestCount >= 5) {
+    if (processedRequestCount >= 3) {
         createOptimizedRoute();
         processedRequestCount = 0;
     }
