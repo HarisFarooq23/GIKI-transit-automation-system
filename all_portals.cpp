@@ -906,6 +906,117 @@ void processRideRequests() {
     }
 }
 
+void processRideRequestsByPriority() {
+    cout << "\n=== PROCESSING RIDE REQUESTS BY PRIORITY ===\n";
+
+    if (requestFront == NULL) {
+        cout << "No pending requests.\n";
+        return;
+    }
+
+    // Count how many requests processed in this batch
+    int processedCount = 0;
+
+    // Process requests until queue is empty or batch limit reached (optional)
+    while (requestFront != NULL && processedCount < 3) {
+
+        // 1. Find the request with highest priority
+        RideRequest* req = requestFront;
+        RideRequest* prevReq = NULL;
+        RideRequest* current = requestFront;
+        RideRequest* prev = NULL;
+
+        int maxPriority = -1;
+
+        while (current != NULL) {
+            Student* student = searchStudent(studentRoot, current->studentID);
+            if (student != NULL && student->priorityPoints > maxPriority) {
+                maxPriority = student->priorityPoints;
+                req = current;
+                prevReq = prev;
+            }
+            prev = current;
+            current = current->next;
+        }
+
+        // 2. Find nearest available shuttle
+        Shuttle* nearestShuttle = findNearestShuttle(req->pickupStop);
+        if (nearestShuttle == NULL) {
+            cout << "No available shuttles for Request ID " << req->requestID << "\n";
+            // Remove request from queue anyway
+            if (prevReq == NULL) requestFront = req->next;
+            else prevReq->next = req->next;
+            delete req;
+            processedCount++;
+            continue;
+        }
+
+        // 3. Calculate total distance
+        int shuttleToPickup = campusGraph->getShortestDistance(nearestShuttle->currentStop, req->pickupStop);
+        int pickupToDrop = campusGraph->getShortestDistance(req->pickupStop, req->dropStop);
+        int totalDistance = shuttleToPickup + pickupToDrop;
+
+        // 4. Update shuttle
+        nearestShuttle->status = "Busy";
+        nearestShuttle->seatsFilled++;
+
+        // 5. Create processed ride
+        ProcessedRide* newProcessedRide = new ProcessedRide(
+            req->studentID, nearestShuttle->shuttleID,
+            req->pickupStop, req->dropStop,
+            req->requestID, totalDistance, "Completed"
+        );
+
+        newProcessedRide->next = processedRear; // Push to stack
+        processedRear = newProcessedRide;
+        if (processedFront == NULL) processedFront = processedRear;
+
+        // 6. Save to file
+        ofstream pf(PROCESSED_FILE, ios::app);
+        if (pf.is_open()) {
+            pf << newProcessedRide->requestID << " "
+               << newProcessedRide->studentID << " "
+               << newProcessedRide->shuttleID << " "
+               << newProcessedRide->pickupStop << " "
+               << newProcessedRide->dropStop << " "
+               << newProcessedRide->totalDistance << " "
+               << newProcessedRide->estimatedTime << " "
+               << newProcessedRide->status << "\n";
+            pf.close();
+        }
+
+        // 7. Move shuttle to drop stop
+        nearestShuttle->currentStop = req->dropStop;
+
+        // 8. Print detailed output
+        cout << "----------------------------------------\n";
+        cout << "Request ID: " << req->requestID << "\n";
+        cout << "Student ID: " << req->studentID << "\n";
+        cout << "Shuttle ID: " << nearestShuttle->shuttleID << "\n";
+        cout << "Pickup: " << campusGraph->getStopName(req->pickupStop) << " (" << req->pickupStop << ")\n";
+        cout << "Drop: " << campusGraph->getStopName(req->dropStop) << " (" << req->dropStop << ")\n";
+        cout << "Total Distance: " << totalDistance << " units\n";
+        cout << "Estimated Time: " << totalDistance * 5 << " minutes\n";
+        cout << "Student Priority Points: " << maxPriority << "\n";
+        cout << "----------------------------------------\n";
+
+        // 9. Remove request from queue
+        if (prevReq == NULL) requestFront = req->next;
+        else prevReq->next = req->next;
+        delete req;
+
+        processedCount++;
+        processedRequestCount++;
+    }
+
+    cout << "\nProcessed " << processedCount << " ride(s) based on priority.\n";
+
+    // 10. Optionally create optimized route after certain number of processed requests
+    if (processedRequestCount >= 5) {
+        createOptimizedRoute();
+        processedRequestCount = 0;
+    }
+}
 
 // ==========================================
 // ROUTE OPTIMIZATION FUNCTIONS
@@ -1394,12 +1505,13 @@ void ShuttleManagerMenu() {
         cout << "4. View Shuttle Fleet\n";
         cout << "5. View Pending Requests\n";
         cout << "6. Process Ride Requests\n";
-        cout << "7. Undo Last Assignment\n";
-        cout << "8. View Cancelled Requests\n";
-        cout << "9. View Processed Rides\n";
-        cout << "10. View Route Map\n";
-        cout << "11. Test Dijkstra's Algorithm\n";
-        cout << "12. View History\n";
+        cout << "7.Process Ride Requests By Priority\n";
+        cout << "8. Undo Last Assignment\n";
+        cout << "9. View Cancelled Requests\n";
+        cout << "10. View Processed Rides\n";
+        cout << "11. View Route Map\n";
+        cout << "12. Test Dijkstra's Algorithm\n";
+        cout << "13. View History\n";
         cout << "0. Back to Main Menu\n";
         cout << "Enter choice: ";
         cin >> choice;
@@ -1411,12 +1523,13 @@ void ShuttleManagerMenu() {
             case 4: viewShuttles(); break;
             case 5: viewPendingRequests(); break;
             case 6: processRideRequests(); break;
-            case 7: undoLastAssignment(); break;
-            case 8: viewCancelledRequests(); break;
-            case 9: viewProcessedRides(); break;
-            case 10: campusGraph->displayGraph(); break;
-            case 11: testDijkstra(); break;
-            case 12: viewHistory(); break;
+            case 7: processRideRequestsByPriority(); break;
+            case 8: undoLastAssignment(); break;
+            case 9: viewCancelledRequests(); break;
+            case 10: viewProcessedRides(); break;
+            case 11: campusGraph->displayGraph(); break;
+            case 12: testDijkstra(); break;
+            case 13: viewHistory(); break;
             case 0: break;
             default: cout << "Invalid choice!\n";
         }
@@ -1472,3 +1585,4 @@ int main() {
 
     return 0;
 }
+
