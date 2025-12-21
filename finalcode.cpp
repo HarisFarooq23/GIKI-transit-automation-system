@@ -518,32 +518,32 @@ void registerStudent() {
     int id;
     string name, type;
 
-    cout << "\n=== STUDENT REGISTRATION ===\n";
-    cout << "Enter Student ID: ";
+    cout << "\n=== User REGISTRATION ===\n";
+    cout << "Enter User ID: ";
     cin >> id;
 
     if (searchStudent(studentRoot, id) != NULL) {
-        cout << "Student with ID " << id << " is logged in \n";
+        cout << "User with ID " << id << " is logged in \n";
         return;
     }
 
-    cout << "Enter Student Name: ";
+    cout << "Enter User Name: ";
     cin>>name;
 
 
     studentRoot = insert(studentRoot, id, name);
-    cout << "Student registered successfully!\n";
+    cout << "User registered successfully!\n";
 }
 
 void removeStudent() {
     int id;
-    cout << "\n=== REMOVE STUDENT ===\n";
-    cout << "Enter Student ID to remove: ";
+    cout << "\n=== REMOVE User ===\n";
+    cout << "Enter User ID to remove: ";
     cin >> id;
 
     Student* student = searchStudent(studentRoot, id);
     if (student == NULL) {
-        cout << "Student not found!\n";
+        cout << "User not found!\n";
         return;
     }
 
@@ -657,12 +657,12 @@ void requestRide() {
     string priority = "Normal";
 
     cout << "\n=== REQUEST SHUTTLE RIDE ===\n";
-    cout << "Enter your Student ID: ";
+    cout << "Enter your User ID: ";
     cin >> studentID;
 
     Student* student = searchStudent(studentRoot, studentID);
     if (student == NULL) {
-        cout << "Student not found! Please register first.\n";
+        cout << "User not found! Please register first.\n";
         return;
     }
 
@@ -1025,15 +1025,14 @@ void processRideRequestsByPriority() {
         // 8. Print detailed output
        cout << "======================================\n";
      cout << setw(22) << left << "Request ID:" << req->requestID << "\n";
-     cout << setw(22) << left << "Student ID:" << req->studentID << "\n";
-     cout << setw(22) << left << "Shuttle ID:" << nearestShuttle->shuttleID << "\n";
+     cout << setw(22) << left << "User ID:" << req->studentID << "\n";
      cout << setw(22) << left << "Pickup:" 
      << campusGraph->getStopName(req->pickupStop) << " (Stop " << req->pickupStop << ")\n";
      cout << setw(22) << left << "Drop:" 
      << campusGraph->getStopName(req->dropStop) << " (Stop " << req->dropStop << ")\n";
      cout << setw(22) << left << "Total Distance:" << totalDistance << " units\n";
      cout << setw(22) << left << "Estimated Time:" << totalDistance * 5 << " minutes\n";
-     cout << setw(22) << left << "Student Priority Points:" << maxPriority << "\n";
+     cout << setw(22) << left << "Priority Points:" << maxPriority << "\n";
      cout << "========================================\n";
           
 
@@ -1111,12 +1110,12 @@ void cancelRide() {
 void viewCurrentBooking() {
     int studentID;
     cout << "\n===== VIEW CURRENT BOOKING =====\n";
-    cout << "Enter your Student ID: ";
+    cout << "Enter your User ID: ";
     cin >> studentID;
 
     Student* student = searchStudent(studentRoot, studentID);
     if (student == NULL) {
-        cout << "Student not found! Please register first.\n";
+        cout << "User not found! Please register first.\n";
         return;
     }
 
@@ -1197,7 +1196,7 @@ void viewPendingRequests() {
     }
 
     RideRequest* temp = requestFront;
-    cout << "Request ID | Student ID | From | To | Time\n";
+    cout << "Request ID | User ID    | From | To | Time\n";
     cout << "-----------|------------|------|----|-----\n";
 
     while (temp != NULL) {
@@ -1280,7 +1279,7 @@ void viewProcessedRides() {
     }
 
     ProcessedRide* temp = processedFront;
-    cout << "Request ID | Student ID | Shuttle ID | From | To | Distance | Est. Time | Status\n";
+    cout << "Request ID | User ID    | Shuttle ID | From | To | Distance | Est. Time | Status\n";
     cout << "-----------|------------|------------|------|----|----------|-----------|--------\n";
 
     while (temp != NULL) {
@@ -1300,7 +1299,7 @@ void viewCancelledRequests() {
     }
 
     CancelledRequest* temp = cancelledTop;
-    cout << "Request ID | Student ID | From | To | Time | Reason\n";
+    cout << "Request ID | User ID    | From | To | Time | Reason\n";
     cout << "-----------|------------|------|----|------|--------\n";
 
     while (temp != NULL) {
@@ -1352,7 +1351,7 @@ ProcessedRide* pr = processedRear;
 if (pr == NULL) {
     cout << "No processed rides.\n";
 } else {
-    cout << "RequestID | StudentID | ShuttleID | From              | To                | Distance | Status\n";
+    cout << "RequestID | UserID    | ShuttleID | From              | To                | Distance | Status\n";
     cout << "----------|-----------|-----------|-----------------|-----------------|----------|--------\n";
 
     while (pr != NULL) {
@@ -1375,7 +1374,7 @@ CancelledRequest* cr = cancelledTop;
 if (cr == NULL) {
     cout << "No cancelled rides.\n";
 } else {
-    cout << "RequestID | StudentID | From              | To                | Time          | Reason\n";
+    cout << "RequestID | UserID    | From              | To                | Time          | Reason\n";
     cout << "----------|-----------|-----------------|-----------------|---------------|------------------\n";
 
     while (cr != NULL) {
@@ -1424,7 +1423,7 @@ void displayActiveRoutes() {
             while (stop != NULL) {
                 cout << "  " << stopNum << ". " << stop->stopName << " (" << stop->stopID << ")";
                 if (stop->studentID != 0) {
-                    cout << " - Student " << stop->studentID;
+                    cout << " - User " << stop->studentID;
                 }
                 cout << "\n";
                 stop = stop->next;
@@ -1568,7 +1567,7 @@ void studentMenu() {
         cout << "\n====================== STUDENT MENU ======================\n";
         cout << "| Option | Description                                   |\n";
         cout << "---------------------------------------------------------\n";
-        cout << "|   1    | Register as Student                           |\n";
+        cout << "|   1    | Register as User                              |\n";
         cout << "|   2    | Request Shuttle Ride                          |\n";
         cout << "|   3    | Cancel Ride Request                           |\n";
         cout << "|   4    | View Current Booking                          |\n";
@@ -1658,7 +1657,7 @@ int main() {
         cout << "\n================== MAIN MENU ==================\n";
         cout << "| Option | Description                       |\n";
         cout << "---------------------------------------------\n";
-        cout << "|   1    | Student Portal                    |\n";
+        cout << "|   1    | User Portal                       |\n";
         cout << "|   2    | Shuttle Manager Portal            |\n";
         cout << "|   3    | Driver Portal                     |\n";
         cout << "|   4    | View System Status                |\n";
@@ -1677,7 +1676,7 @@ int main() {
                 cout << "| Item                  | Status                     |\n";
                 cout << "------------------------------------------------------\n";
                 cout << "| Shuttle Stops          | " << setw(26) << left << campusGraph->getNumStops() << "|\n";
-                cout << "| Registered Students    | " << setw(26) << left 
+                cout << "| Registered User    | " << setw(26) << left 
                      << (studentRoot != NULL ? "Available" : "None") << "|\n";
                 cout << "| Active Shuttles        | " << setw(26) << left 
                      << (shuttleHead != NULL ? "Available" : "None") << "|\n";
