@@ -218,14 +218,14 @@ public:
         }
     }
 
-    // Dijkstra's Algorithm Implementation
-    int* findShortestPaths(int source) {
-        int* distances = new int[numStops];
+    
+    int* findShortestPaths(int source) {                //Dijkstras Implementation
+        int* distances = new int[numStops];        
         bool* visited = new bool[numStops];
         int* previous = new int[numStops];
 
-        // Initialize
-        for (int i = 0; i < numStops; i++) {
+        
+        for (int i = 0; i < numStops; i++) {            //Initialization
             distances[i] = INT_MAX;
             visited[i] = false;
             previous[i] = -1;
@@ -234,7 +234,7 @@ public:
 
         // Dijkstra's algorithm
         for (int count = 0; count < numStops - 1; count++) {
-            // Find minimum distance vertex
+            
             int minDist = INT_MAX;
             int minIndex = -1;
 
@@ -245,7 +245,7 @@ public:
                 }
             }
 
-            if (minIndex == -1) break; // No more reachable vertices
+            if (minIndex == -1) break;              // No more reachable vertices
             visited[minIndex] = true;
 
             // Update distances of adjacent vertices
@@ -278,19 +278,20 @@ public:
 void displayGraph() {
     cout << "\n=== SHUTTLE STOPS GRAPH ===\n";
 
-    // Display stops with proper formatting
-    cout << setw(7) << left << "Stop ID" << " | " << "Stop Name\n";
+    
+    cout << setw(7) << left << "Stop ID" << " | " << "Stop Name\n";     // Display stops
     cout << "--------|----------------\n";
     for (int i = 0; i < numStops; i++) {
         cout << setw(7) << left << (i + 1) << " | " << stopNames[i] << "\n";
     }
 
-    // Display adjacency matrix with proper formatting
-    cout << "\n=== Adjacency Matrix (Weights) ===\n";
     
-    // Header row
-    cout << setw(4) << " ";
-    for (int i = 0; i < numStops; i++) {
+    cout << "\n=== Adjacency Matrix (Weights) ===\n";       // Display adjacency matrix 
+    
+
+    cout << setw(4) << " ";    
+    
+    for (int i = 0; i < numStops; i++) {        // Header row
         cout << setw(4) << (i + 1);
     }
     cout << "\n";
@@ -314,21 +315,24 @@ void displayGraph() {
 
 
 // ---------- SHUTTLE LINKED LIST ----------
+
+
 struct Shuttle {
     int shuttleID, capacity, currentStop, seatsFilled;
-    string status; // "Available", "Busy"
+    string status;                       // "Available", "Busy"
     Shuttle* next;
     Shuttle(int id, int cap) {
         shuttleID = id;
         capacity = cap;
         status = "Available";
-        currentStop = 1; // Default to first stop
+        currentStop = 1;                // Default set to first stop
         seatsFilled = 0;
         next = NULL;
     }
 };
 
 // ---------- RIDE REQUEST QUEUE ----------
+
 struct RideRequest {
     int studentID, pickupStop, dropStop, requestID;
     string timeRequested, priority;
@@ -345,9 +349,10 @@ struct RideRequest {
 };
 
 // ---------- PROCESSED RIDES QUEUE ----------
+
 struct ProcessedRide {
     int studentID, shuttleID, pickupStop, dropStop, requestID;
-    int totalDistance, estimatedTime; // estimatedTime in minutes (5 mins per unit)
+    int totalDistance, estimatedTime;       // estimatedTime in minutes (5 mins per unit)
     string timeProcessed, status;
     ProcessedRide* next;
     ProcessedRide(int sid, int shid, int pickup, int drop, int rid, int dist, string time) {
@@ -357,7 +362,7 @@ struct ProcessedRide {
         dropStop = drop;
         requestID = rid;
         totalDistance = dist;
-        estimatedTime = dist * 5; // 5 minutes per unit distance
+        estimatedTime = dist * 5;           // 5 minutes per unit distance
         timeProcessed = time;
         status = "Completed";
         next = NULL;
@@ -365,6 +370,7 @@ struct ProcessedRide {
 };
 
 // ---------- ACTIVE SHUTTLE ROUTES ----------
+
 struct RouteStop {
     int stopID;
     string stopName;
@@ -381,11 +387,12 @@ struct RouteStop {
 };
 
 struct ActiveRoute {
+
     int shuttleID;
     int routeID;
     RouteStop* stops;
     int totalStops;
-    string status; // "Planning", "Active", "Completed"
+    string status;          // "Planning", "Active", "Completed"
     ActiveRoute* next;
     ActiveRoute(int shid, int rid) {
         shuttleID = shid;
@@ -398,6 +405,7 @@ struct ActiveRoute {
 };
 
 // ---------- CANCELLED REQUESTS STACK ----------
+
 struct CancelledRequest {
     int studentID, pickupStop, dropStop, requestID;
     string timeRequested, priority;
@@ -430,7 +438,10 @@ ActiveRoute* activeRoutes = NULL;
 int nextRequestID = 1;
 int nextShuttleID = 1;
 int nextRouteID = 1;
-int processedRequestCount = 0; // Counter for route planning trigger
+int processedRequestCount = 0;         
+
+
+//---------File that loads up StudentAVL
 
 void loadFromFile() {
     ifstream fin("students.txt");
@@ -455,7 +466,7 @@ void loadCampusData() {
     // Initialize 9 shuttle stops
     campusGraph = new StopsGraph(9);
 
-    // Load stop names from data.txt
+    
     campusGraph->setStopName(1, "auditorium");
     campusGraph->setStopName(2, "Academic block");
     campusGraph->setStopName(3, "Sports Complex");
@@ -468,8 +479,8 @@ void loadCampusData() {
 
 
     
-    campusGraph->addEdge(1, 2, 1);  
-    campusGraph->addEdge(2, 1, 1);
+    campusGraph->addEdge(1, 2, 1);      
+    campusGraph->addEdge(2, 1, 1);       
     campusGraph->addEdge(2, 4, 2);
     campusGraph->addEdge(4, 8, 2);
     campusGraph->addEdge(8, 3, 1);
@@ -484,7 +495,7 @@ void loadCampusData() {
 
 void initializeShuttles(int numShuttles) {
     for (int i = 0; i < numShuttles; i++) {
-        Shuttle* newShuttle = new Shuttle(nextShuttleID++, 25); // Default capacity 25
+        Shuttle* newShuttle = new Shuttle(nextShuttleID++, 25);         // Default capacity 25
 
         if (shuttleHead == NULL) {
             shuttleHead = newShuttle;
@@ -567,9 +578,13 @@ void viewStudents() {
 void addShuttle() {
     int capacity;
     cout << "\n=== ADD SHUTTLE ===\n";
-    cout << "Enter shuttle capacity: ";
+    cout << "Enter shuttle capacity: ( should be between 20 to 50 ) ";
     cin >> capacity;
-
+    
+    if(capacity >50 || capacity<20){
+        capacity =25;    //capacity set back to default capcaity for an invalid entry
+    } 
+    
     Shuttle* newShuttle = new Shuttle(nextShuttleID++, capacity);
 
     if (shuttleHead == NULL) {
@@ -715,7 +730,7 @@ void createOptimizedRoute() {
     }
 
     // Collect recent stops from processed rides (last 8 rides)
-    int recentStops[20]; // Max 20 stops
+    int recentStops[20]; 
     int stopCount = 0;
     ProcessedRide* prtemp = processedRear;
 
