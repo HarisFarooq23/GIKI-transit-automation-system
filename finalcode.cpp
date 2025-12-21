@@ -1220,49 +1220,57 @@ void undoLastAssignment() {
         return;
     }
 
-    // Get the last processed ride
+    // Last processed ride
     ProcessedRide* temp = processedRear;
 
-    // Find shuttle and restore capacity
+    // Restore shuttle capacity
     Shuttle* shuttle = shuttleHead;
     while (shuttle != NULL) {
         if (shuttle->shuttleID == temp->shuttleID) {
-            // Restore shuttle capacity (reduce seats filled)
-            if (shuttle->seatsFilled > 0) {
+
+            if (shuttle->seatsFilled > 0)
                 shuttle->seatsFilled--;
-            }
-            if (shuttle->seatsFilled <= 0) {
+
+            if (shuttle->seatsFilled == 0)
                 shuttle->status = "Available";
-                shuttle->seatsFilled = 0;
-            }
-            cout << "Processed ride undone. Shuttle " << shuttle->shuttleID << " status restored.\n";
+
+            cout << "Processed ride undone. Shuttle "
+                 << shuttle->shuttleID << " restored.\n";
             break;
         }
         shuttle = shuttle->next;
     }
 
-    // Remove from processed rides queue
+    // Remove last node from processed list
     if (processedFront == processedRear) {
         processedFront = processedRear = NULL;
     } else {
-        ProcessedRide* current = processedFront;
-        while (current->next != processedRear) {
-            current = current->next;
+        ProcessedRide* prev = processedFront;
+        while (prev->next != processedRear && prev->next != NULL) {
+            prev = prev->next;
         }
-        current->next = NULL;
-        processedRear = current;
+        prev->next = NULL;
+        processedRear = prev;
     }
 
-    // Add to cancelled requests
+    // Push into cancelled requests stack
     CancelledRequest* cancelled = new CancelledRequest(
-        temp->studentID, temp->pickupStop, temp->dropStop,
-        "Cancelled by Shuttle Manager", "Normal", temp->requestID
+        temp->studentID,
+        temp->pickupStop,
+        temp->dropStop,
+        "Cancelled by Shuttle Manager",
+        "Normal",
+        temp->requestID
     );
+
     cancelled->next = cancelledTop;
     cancelledTop = cancelled;
 
     delete temp;
+
+    cout << "Undo completed successfully.\n";
 }
+
 
 void viewProcessedRides() {
     cout << "\n=== PROCESSED RIDES HISTORY ===\n";
